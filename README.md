@@ -192,10 +192,8 @@ from dataset import HackathonDataset, collate_fn
 from metrics.score import normalized_rooms_score
 from torch.utils.data import DataLoader
 
-sas_token = "<Din SAS Token>"
-
 # Last inn treningssett
-dataset = HackathonDataset(split="train", download=True, sas_token=sas_token, seed=123)
+dataset = HackathonDataset(split="train", download=True, seed=42, root="data").get_pandas_dataframe()
 
 # Se på en rad
 sample = dataset[0]
