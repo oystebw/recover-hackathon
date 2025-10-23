@@ -4,6 +4,7 @@ import sys
 import typing
 from pathlib import Path
 from urllib.error import URLError
+from dotenv import load_dotenv
 
 import kaggle
 import numpy as np
@@ -61,9 +62,7 @@ class WorkOperationsDataset(BaseDataset):
             self.download()
 
         if not self._check_exists():
-            raise RuntimeError(
-                "Dataset not found. You can use download=True to download it."
-            )
+            raise RuntimeError("Dataset not found. You can use download=True to download it.")
 
         self.data = self._load_data()
         self.tickets = self._load_tickets()
@@ -104,9 +103,7 @@ class WorkOperationsDataset(BaseDataset):
             "Y": torch.tensor(self._index_encode(row[self.col_idx["Y"]])),
             "project_id": row[self.col_idx["project_id"]],
             "room_cluster": row[self.col_idx["room_cluster"]],
-            "room_cluster_one_hot": torch.tensor(
-                row[self.col_idx["room_cluster_one_hot"]]
-            ),
+            "room_cluster_one_hot": torch.tensor(row[self.col_idx["room_cluster_one_hot"]]),
             "calculus": row[self.col_idx["calculus"]],
             "X_codes": torch.tensor(row[self.col_idx["X"]]),
             "Y_codes": torch.tensor(row[self.col_idx["Y"]]),
@@ -154,9 +151,7 @@ class WorkOperationsDataset(BaseDataset):
         lf = pl.scan_csv(os.path.join(self.data_folder, f"{self.split}.csv"))
         data = (
             lf.with_columns(
-                pl.col("room")
-                .map_elements(self._cluster_room, return_dtype=pl.Utf8)
-                .alias("room_cluster"),
+                pl.col("room").map_elements(self._cluster_room, return_dtype=pl.Utf8).alias("room_cluster"),
             )
             .group_by(["project_id", "room", "room_cluster"])
             .agg(
@@ -165,15 +160,11 @@ class WorkOperationsDataset(BaseDataset):
             )
             .with_columns(
                 pl.col("wo_codes")
-                .map_elements(
-                    lambda x: self._index_encode(x), return_dtype=pl.List(pl.Int8)
-                )
+                .map_elements(lambda x: self._index_encode(x), return_dtype=pl.List(pl.Int8))
                 .alias("wo_codes_index_encoded"),
                 pl.col("room_cluster")
                 .map_elements(
-                    lambda x: index_encode_str(
-                        x, len(self.__rooms), self.room_to_index
-                    ),
+                    lambda x: index_encode_str(x, len(self.__rooms), self.room_to_index),
                     return_dtype=pl.List(pl.Int8),
                 )
                 .alias("room_cluster_one_hot"),
@@ -189,16 +180,17 @@ class WorkOperationsDataset(BaseDataset):
     def _load_tickets(self):
         df = pl.scan_csv(os.path.join(self.data_folder, "tickets.csv")).collect()
         tickets = df.with_columns(
-            (
-                pl.col("n_tickets").cast(pl.Float64)
-                / df.select(pl.col("n_tickets").max()).item()
-            ).alias("normalized_n_tickets")
+            (pl.col("n_tickets").cast(pl.Float64) / df.select(pl.col("n_tickets").max()).item()).alias(
+                "normalized_n_tickets"
+            )
         )
         return tickets
 
     def download(self) -> None:
         if self._check_exists():
             return
+
+        load_dotenv()
 
         kaggle.api.authenticate()
         for filename in self.resources:
@@ -209,15 +201,10 @@ class WorkOperationsDataset(BaseDataset):
                     path=self.data_folder,
                 )
             except URLError as e:
-                raise RuntimeError(
-                    f"Failed to download {filename}. Please check your network connection."
-                ) from e
+                raise RuntimeError(f"Failed to download {filename}. Please check your network connection.") from e
 
     def _check_exists(self) -> bool:
-        return all(
-            os.path.exists(os.path.join(self.data_folder, filename))
-            for filename in self.resources
-        )
+        return all(os.path.exists(os.path.join(self.data_folder, filename)) for filename in self.resources)
 
     @property
     def data_folder(self) -> str:
@@ -276,10 +263,7 @@ class WorkOperationsDataset(BaseDataset):
                     self.np_rng.integers(
                         0,
                         (
-                            strategy["sample_pct"]
-                            * subset.select(pl.col("wo_codes").list.len())
-                            .to_numpy()
-                            .flatten()
+                            strategy["sample_pct"] * subset.select(pl.col("wo_codes").list.len()).to_numpy().flatten()
                         ).astype(int)
                         + 1,
                     ),
@@ -314,11 +298,7 @@ class WorkOperationsDataset(BaseDataset):
                         dtype=pl.Float64,
                     )
                 )
-                .with_columns(
-                    (pl.col("random_weight") * pl.col("normalized_n_tickets")).alias(
-                        "weight"
-                    )
-                )
+                .with_columns((pl.col("random_weight") * pl.col("normalized_n_tickets")).alias("weight"))
                 .sort(by=["index", "weight"], descending=[False, True])
             )
 
@@ -327,9 +307,7 @@ class WorkOperationsDataset(BaseDataset):
                 .agg("wo_codes")
                 .join(df.select(["index", "n_samples"]), on="index", how="inner")
                 .with_columns(
-                    pl.col("wo_codes")
-                    .list.slice(0, pl.col("n_samples"))
-                    .alias("removed_codes"),
+                    pl.col("wo_codes").list.slice(0, pl.col("n_samples")).alias("removed_codes"),
                     pl.col("wo_codes")
                     .list.slice(
                         pl.col("n_samples"),
@@ -355,13 +333,11 @@ class WorkOperationsDataset(BaseDataset):
             )
 
             if strategy["use_sampled_calculus"]:
-                right = base_df.select(
-                    ["project_id", "room", "X", "room_cluster"]
-                ).rename({"X": "sampled_X"})
+                right = base_df.select(["project_id", "room", "X", "room_cluster"]).rename({"X": "sampled_X"})
             else:
-                right = base_df.select(
-                    ["project_id", "room", "wo_codes", "room_cluster"]
-                ).rename({"wo_codes": "sampled_X"})
+                right = base_df.select(["project_id", "room", "wo_codes", "room_cluster"]).rename(
+                    {"wo_codes": "sampled_X"}
+                )
             left = base_df.select(["project_id", "room"]).with_row_index("row_index")
             joined = left.join(right, on="project_id", how="left")
             joined = joined.filter(pl.col("room") != pl.col("room_right"))
@@ -392,26 +368,18 @@ class WorkOperationsDataset(BaseDataset):
                 full_calculus[idx] = val
             full_calculus = [x if x is not None else [] for x in full_calculus]
 
-            flat_entries = [
-                (i, entry)
-                for i, calc_list in enumerate(full_calculus)
-                for entry in calc_list
-            ]
+            flat_entries = [(i, entry) for i, calc_list in enumerate(full_calculus) for entry in calc_list]
 
             work_ops = [entry["work_operations"] for _, entry in flat_entries]
             room_clusters = [entry["room_cluster"] for _, entry in flat_entries]
 
             work_ops_encoded = self._index_encode_batch(work_ops)
-            room_clusters_encoded = index_encode_str_batch(
-                room_clusters, len(self.__rooms), self.room_to_index
-            )
+            room_clusters_encoded = index_encode_str_batch(room_clusters, len(self.__rooms), self.room_to_index)
 
             work_ops_tensor = torch.as_tensor(work_ops_encoded)
             room_clusters_tensor = torch.as_tensor(room_clusters_encoded)
 
-            for (i, entry), wo_enc, rc_enc in zip(
-                flat_entries, work_ops_tensor, room_clusters_tensor, strict=False
-            ):
+            for (i, entry), wo_enc, rc_enc in zip(flat_entries, work_ops_tensor, room_clusters_tensor, strict=False):
                 entry = dict(entry)
                 entry["work_operations_index_encoded"] = wo_enc.tolist()
                 entry["room_cluster_one_hot"] = rc_enc.tolist()
@@ -443,9 +411,7 @@ class WorkOperationsDataset(BaseDataset):
                 ]
             )
             .explode(["wo_codes"])
-            .with_columns(
-                pl.col("Y").list.contains(pl.col("wo_codes")).alias("is_hidden")
-            )
+            .with_columns(pl.col("Y").list.contains(pl.col("wo_codes")).alias("is_hidden"))
             .rename({"wo_codes": "work_operation"})
             .drop("Y")
             .unique(["project_id", "room", "work_operation"])

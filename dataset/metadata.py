@@ -4,6 +4,7 @@ import typing
 from pathlib import Path
 from urllib.error import URLError
 import kaggle
+from dotenv import load_dotenv
 
 import polars as pl
 import torch
@@ -46,9 +47,7 @@ class MetadataDataset(BaseDataset):
         return {
             "project_id": row["project_id"][0],
             "insurance_company": row["insurance_company"][0],
-            "insurance_company_one_hot": torch.tensor(
-                row["insurance_company_one_hot"], dtype=torch.int8
-            ),
+            "insurance_company_one_hot": torch.tensor(row["insurance_company_one_hot"], dtype=torch.int8),
             "recover_office_zip_code": int(row["recover_office_zip_code"][0] or 0),
             "damage_address_zip_code": int(row["damage_address_zip_code"][0] or 0),
             "office_distance": float(row["office_distance"][0] or 0),
@@ -60,6 +59,8 @@ class MetadataDataset(BaseDataset):
         if self._check_exists():
             return
 
+        load_dotenv()
+
         kaggle.api.authenticate()
         for filename in self.resources:
             try:
@@ -69,15 +70,10 @@ class MetadataDataset(BaseDataset):
                     path=self.data_folder,
                 )
             except URLError as e:
-                raise RuntimeError(
-                    f"Failed to download {filename}. Please check your network connection."
-                ) from e
+                raise RuntimeError(f"Failed to download {filename}. Please check your network connection.") from e
 
     def _check_exists(self) -> bool:
-        return all(
-            os.path.exists(os.path.join(self.data_folder, filename))
-            for filename in self.resources
-        )
+        return all(os.path.exists(os.path.join(self.data_folder, filename)) for filename in self.resources)
 
     @property
     def data_folder(self) -> str:
@@ -99,18 +95,13 @@ class MetadataDataset(BaseDataset):
             )
             .unique("project_id")
             .with_columns(
-                pl.col("office_distance")
-                .str.replace_all(",", ".")
-                .cast(pl.Float32)
-                .alias("office_distance"),
+                pl.col("office_distance").str.replace_all(",", ".").cast(pl.Float32).alias("office_distance"),
             )
         )
 
         df = lf.collect()
 
-        company_lookup = {
-            chr(k): k - ord("A") for k in range(ord("A"), ord("A") + self.num_companies)
-        }
+        company_lookup = {chr(k): k - ord("A") for k in range(ord("A"), ord("A") + self.num_companies)}
         df = df.with_columns(
             pl.col("insurance_company")
             .map_elements(
