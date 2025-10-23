@@ -53,3 +53,13 @@ def index_encode_str(label: str, length: int, lookup: dict[str, int]) -> list[in
     if label in lookup.keys():
         vec[lookup[label]] = 1
     return vec.tolist()
+
+
+def index_encode_str_batch(
+    labels: list[str], length: int, lookup: dict[str, int]
+) -> np.ndarray:
+    vec = np.zeros((len(labels), length), dtype=np.int8)
+    for i, label in enumerate(labels):
+        if label in lookup.keys():
+            vec[i, lookup[label]] = 1
+    return vec

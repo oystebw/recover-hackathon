@@ -12,7 +12,7 @@ import torch
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from dataset.base import BaseDataset, index_encode_str
+from dataset.base import BaseDataset, index_encode_str, index_encode_str_batch
 
 
 class WorkOperationsDataset(BaseDataset):
@@ -47,10 +47,12 @@ class WorkOperationsDataset(BaseDataset):
         seed: int | None = None,
         np_rng: np.random.Generator | None = None,
         py_rng: random.Random | None = None,
+        num_clusters: int = 388,
     ):
         super().__init__(root)
         self.split = split
         self.seed = seed
+        self.num_clusters = num_clusters
 
         self.np_rng = np_rng if np_rng is not None else np.random.default_rng(seed)
         self.py_rng = py_rng if py_rng is not None else random.Random(seed)
@@ -141,11 +143,15 @@ class WorkOperationsDataset(BaseDataset):
             vec[i - 1] = 1
         return vec.tolist()
 
+    def _index_encode_batch(self, labels: list[list[int]]) -> np.ndarray:
+        batch_vec = np.zeros((len(labels), self.num_clusters), dtype=np.int8)
+        for i, label_list in enumerate(labels):
+            for j in label_list:
+                batch_vec[i, j - 1] = 1
+        return batch_vec
+
     def _load_data(self):
         lf = pl.scan_csv(os.path.join(self.data_folder, f"{self.split}.csv"))
-        self.num_clusters = (
-            lf.select(pl.col("work_operation_cluster_code").max()).collect().item()
-        )
         data = (
             lf.with_columns(
                 pl.col("room")
@@ -386,21 +392,34 @@ class WorkOperationsDataset(BaseDataset):
                 full_calculus[idx] = val
             full_calculus = [x if x is not None else [] for x in full_calculus]
 
-            calculus_index = []
-            for calc_list in full_calculus:
-                new_calc_list = []
-                for entry in calc_list:
-                    entry = dict(entry)
-                    entry["work_operations_index_encoded"] = torch.tensor(
-                        self._index_encode(entry["work_operations"])
-                    )
-                    entry["room_cluster_one_hot"] = torch.tensor(
-                        index_encode_str(
-                            entry["room_cluster"], len(self.__rooms), self.room_to_index
-                        )
-                    )
-                    new_calc_list.append(entry)
-                calculus_index.append(new_calc_list)
+            flat_entries = [
+                (i, entry)
+                for i, calc_list in enumerate(full_calculus)
+                for entry in calc_list
+            ]
+
+            work_ops = [entry["work_operations"] for _, entry in flat_entries]
+            room_clusters = [entry["room_cluster"] for _, entry in flat_entries]
+
+            work_ops_encoded = self._index_encode_batch(work_ops)
+            room_clusters_encoded = index_encode_str_batch(
+                room_clusters, len(self.__rooms), self.room_to_index
+            )
+
+            work_ops_tensor = torch.as_tensor(work_ops_encoded)
+            room_clusters_tensor = torch.as_tensor(room_clusters_encoded)
+
+            for (i, entry), wo_enc, rc_enc in zip(
+                flat_entries, work_ops_tensor, room_clusters_tensor, strict=False
+            ):
+                entry = dict(entry)
+                entry["work_operations_index_encoded"] = wo_enc.tolist()
+                entry["room_cluster_one_hot"] = rc_enc.tolist()
+                flat_entries[i] = (i, entry)
+
+            calculus_index = [[] for _ in full_calculus]
+            for i, entry in flat_entries:
+                calculus_index[i].append(entry)
 
             calculus_df = pl.DataFrame({"calculus": calculus_index}, strict=False)
             base_df = base_df.with_columns(calculus_df)

@@ -3,6 +3,7 @@ import random
 import sys
 
 import numpy as np
+import pandas as pd
 from torch.utils.data import Dataset
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -77,6 +78,31 @@ class HackathonDataset(Dataset):
     def get_pandas_dataframe(self):
         return self.get_polars_dataframe().to_pandas()
 
+    def multi_hot_encode_list(self, label: list[int]) -> list[int]:
+        return self.work_operations_dataset._index_encode(label)
+
+    def multi_hot_encode_batch(self, labels: list[list[int]]) -> np.ndarray:
+        return self.work_operations_dataset._index_encode_batch(labels)
+
+    def create_submission(self, predictions):
+        """Create a submission file.
+        Args:
+            predictions: dict of id to list of predicted cluster ids
+        """
+        submission = [
+            [k] + self.multi_hot_encode_list(v) for k, v in predictions.items()
+        ]
+        df = pd.DataFrame(
+            submission,
+            columns=["id"]
+            + [str(i) for i in range(0, self.work_operations_dataset.num_clusters)],
+        )
+        assert df.shape[0] == 18299, "Submission must have 18299 rows."
+        assert df.id.unique().shape[0] == 18299, "Submission IDs must be unique."
+        timestamp = pd.Timestamp.now().strftime("%Y%m%d_%H%M%S")
+        df.to_csv(f"submissions/submission_{timestamp}.csv", index=False)
+        print(f"Submission saved to submissions/submission_{timestamp}.csv")
+
     def __repr__(self):
         return f"HackathonDataset(split={self.work_operations_dataset.split}, length={len(self)})"
 
@@ -86,5 +112,5 @@ class HackathonDataset(Dataset):
 
 if __name__ == "__main__":
     dataset = HackathonDataset(split="train", download=True, seed=42, root="data")
-    print(dataset)
-    print(dataset.get_pandas_dataframe().head())
+    test_predictions = {idx: [] for idx in range(18299)}
+    dataset.create_submission(test_predictions)
