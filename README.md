@@ -33,7 +33,7 @@ Recover usually acts as the total provider for all post-damage work. This means 
     
     Either use Kaggle API or download the data manually:
     - **Using Kaggle API**: [Kaggle API Documentation](https://www.kaggle.com/discussions/getting-started/524433) 
-      1. Go to the 'Account' tab on your Kaggle profile.
+  1. Go to the 'Account' tab on your Kaggle profile and open 'Account' settings.
       2. Click 'Create New Token'. This will download a file named kaggle.json containing your API credentials.
       3. Move this file to the appropriate location:
          * Linux/OSX: ~/.kaggle/kaggle.json
