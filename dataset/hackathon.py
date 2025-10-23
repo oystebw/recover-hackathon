@@ -89,7 +89,7 @@ class HackathonDataset(Dataset):
         Args:
             predictions: dict of id to list of predicted cluster ids
         """
-        submission = [[k] + self.multi_hot_encode_list(v) for k, v in predictions.items()]
+        submission = [[k, *self.multi_hot_encode_list(v)] for k, v in predictions.items()]
         df = pd.DataFrame(
             submission,
             columns=["id"] + [str(i) for i in range(0, self.work_operations_dataset.num_clusters)],

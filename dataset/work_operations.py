@@ -4,12 +4,12 @@ import sys
 import typing
 from pathlib import Path
 from urllib.error import URLError
-from dotenv import load_dotenv
 
 import kaggle
 import numpy as np
 import polars as pl
 import torch
+from dotenv import load_dotenv
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 

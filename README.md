@@ -69,7 +69,7 @@ Målet er å forutsi hvilke arbeidsoperasjoner som mangler i et gitt rom, basert
 Kjernen er **HackathonDataset**, som kombinerer:
 
 - **WorkOperationsDataset** – arbeidsoperasjoner i rom (X, Y, calculus, room_cluster)
-- **ProjectsDataset** – prosjektmetadata (forsikringsselskap, postnummer, distanse mellom kontor og skadested m.m.)
+- **MetadataDataset** – prosjektmetadata (forsikringsselskap, postnummer, distanse mellom kontor og skadested m.m.)
 
 Hvert datapunkt inneholder dermed både **romnivå-data** og **prosjektnivå-data**.
 
@@ -86,7 +86,7 @@ Hvert datapunkt inneholder dermed både **romnivå-data** og **prosjektnivå-dat
 - `room_cluster_one_hot` – one-hot representasjon av romkategori
 - `calculus` – kontekst fra andre rom i prosjektet (liste av strukturer med arbeidsoperasjoner + romkategori)
 
-### Felter fra ProjectsDataset
+### Felter fra MetadataDataset
 - `project_id` – unik identifikator for prosjektet
 - `insurance_company` – forsikringsselskap
 - `insurance_company_one_hot` – one-hot representasjon av selskap
@@ -102,14 +102,14 @@ Dette styres av en **sampling_strategy** – en liste med konfigurasjoner, for e
 
 ```python
 [
-  {"subset_size": 0.5, "sample_pct": 0.5, "use_weighted_sampling": True, "use_sampled_calculus": True},
-  {"subset_size": 0.5, "sample_pct": 0.3, "use_weighted_sampling": False, "use_sampled_calculus": True},
+  {"subset_size": 0.5, "sample_pct": 0.5, "use_balanced_data": True, "use_sampled_calculus": True},
+  {"subset_size": 0.5, "sample_pct": 0.3, "use_balanced_data": False, "use_sampled_calculus": True},
 ]
 ```
 
 - `subset_size` → hvor stor andel av datasettet strategien gjelder (må summere til 1.0)
 - `sample_pct` → hvor stor andel av arbeidsoperasjonene i et rom som kan skjules
-- `use_weighted_sampling` → vektlegger sjeldne arbeidsoperasjoner (basert på `tickets.csv`)
+- `use_balanced_data` → vektlegger sjeldne arbeidsoperasjoner (basert på `tickets.csv`)
 - `use_sampled_calculus` → bestemmer om calculus skal bruke skjulte eller originale operasjoner
 
 \
@@ -122,7 +122,7 @@ Du kan angi `seed` ved opprettelse av HackathonDataset eller WorkOperationsDatas
 Dette gir deterministisk sampling (samme splitting mellom X og Y).
 
 ```python
-dataset = HackathonDataset(split="train", download=True, sas_token=sas_token, seed=42)
+dataset = HackathonDataset(split="train", download=True, seed=42)
 ```
 
 ---
@@ -173,13 +173,13 @@ Dette gir et litt annet blikk på dataene og er nyttig for utforsking eller klas
 ```python
 from dataset import HackathonDataset
 
-dataset = HackathonDataset(split="train", download=True, sas_token=sas_token)
+dataset = HackathonDataset(split="train", download=True)
 
 df_polars = dataset.get_polars_dataframe()   # Polars DataFrame
 df_pandas = dataset.get_pandas_dataframe()   # Pandas DataFrame
 ```
 
-Her blir `WorkOperationsDataset` koblet med `ProjectsDataset` via `project_id`, slik at du får ett samlet datasett.
+Her blir `WorkOperationsDataset` koblet med `MetadataDataset` via `project_id`, slik at du får ett samlet datasett.
 
 Vi anbefaler [polars](https://www.pola.rs/) på det varmeste, med det er selvfølgelig ingenting i veien med pandas dersom dere er mer komfortable der (men det går tregere).
 
