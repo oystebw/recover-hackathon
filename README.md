@@ -1,5 +1,16 @@
 # KAI - Kalkyle AI
 
+Recover is Scandinavia’s leading company in damage control and restoration.
+In Norway, we work with all the major insurance companies and carry out around 30,000 assignments each year—mainly insurance-related damages such as water and fire damage.
+We have over 1,200 employees in Norway, most of whom are skilled tradespeople such as carpenters and painters. We also have a significant number of remediation specialists who are experts in disinfection, cleaning, and odor removal after incidents involving soot, mold, chemical spills, and blood. The term *“sanering”* (remediation) is one you might come across during the hackathon, it simply means cleaning, decontaminating, or restoring something to a healthy condition.
+
+When damage occurs, we respond on short notice and take immediate action to limit the damage. We then document the site with photos and reports, and calculate the full extent of the damage in detail. Once the insurance company approves the estimate, we begin the work of cleaning, drying, demolishing, and rebuilding so that the site is restored to its original condition.
+
+Recover usually acts as the total provider for all post-damage work. This means we “take care of everything needed” and invoice the insurance company. If plumbers or electricians are required, we hire them for the specific damage case.
+
+
+**All information about the case is within the `docs/Hackathon_Recover.pdf` file.**
+**Submit your solutions on the [Kaggle competition page](https://www.kaggle.com/competitions/hackathon-recover-x-cogito/overview).**
 
 ## 🛠️ Prerequisites
 
