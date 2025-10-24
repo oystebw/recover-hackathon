@@ -112,6 +112,15 @@ class HackathonDataset(Dataset):
 
 
 if __name__ == "__main__":
-    dataset = HackathonDataset(split="train", download=True, seed=42, root="data")
+    from torch.utils.data import DataLoader
+    from collate import collate_fn
+
+    dataset = HackathonDataset(split="val", download=True, seed=42, root="data")
     test_predictions = {idx: [] for idx in range(18299)}
     dataset.create_submission(test_predictions)
+
+    dataloader = DataLoader(dataset, batch_size=32, collate_fn=collate_fn)
+
+    for batch in dataloader:
+        print(batch)
+        break

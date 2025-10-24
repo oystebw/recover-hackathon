@@ -14,8 +14,8 @@ def collate_fn(batch):
         target_features[i] = torch.cat([item["X"], item["room_cluster_one_hot"]])
         context = []
         for entry in item["calculus"]:
-            work_operations_index_encoded = entry["work_operations_index_encoded"]
-            room_cluster_one_hot = entry["room_cluster_one_hot"]
+            work_operations_index_encoded = entry["work_operations_index_encoded"].detach().clone()
+            room_cluster_one_hot = entry["room_cluster_one_hot"].detach().clone()
             context.append(torch.cat([work_operations_index_encoded, room_cluster_one_hot]))
         if context:
             context_tensor = torch.stack(context)

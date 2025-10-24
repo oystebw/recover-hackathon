@@ -373,34 +373,21 @@ class WorkOperationsDataset(BaseDataset):
             if "calculus" in base_df.columns:
                 base_df = base_df.drop("calculus")
             full_calculus = [None] * subset.height
-            for idx, val in zip(
-                calculus_df["row_index"],
-                calculus_df["calculus"].to_list(),
-                strict=False,
-            ):
+            for idx, val in zip(calculus_df["row_index"], calculus_df["calculus"].to_list(), strict=False):
                 full_calculus[idx] = val
             full_calculus = [x if x is not None else [] for x in full_calculus]
 
-            flat_entries = [(i, entry) for i, calc_list in enumerate(full_calculus) for entry in calc_list]
-
-            work_ops = [entry["work_operations"] for _, entry in flat_entries]
-            room_clusters = [entry["room_cluster"] for _, entry in flat_entries]
-
-            work_ops_encoded = self._index_encode_batch(work_ops)
-            room_clusters_encoded = index_encode_str_batch(room_clusters, len(self.__rooms), self.room_to_index)
-
-            work_ops_tensor = torch.as_tensor(work_ops_encoded)
-            room_clusters_tensor = torch.as_tensor(room_clusters_encoded)
-
-            for (i, entry), wo_enc, rc_enc in zip(flat_entries, work_ops_tensor, room_clusters_tensor, strict=False):
-                entry = dict(entry)
-                entry["work_operations_index_encoded"] = wo_enc.tolist()
-                entry["room_cluster_one_hot"] = rc_enc.tolist()
-                flat_entries[i] = (i, entry)
-
-            calculus_index = [[] for _ in full_calculus]
-            for i, entry in flat_entries:
-                calculus_index[i].append(entry)
+            calculus_index = []
+            for calc_list in full_calculus:
+                new_calc_list = []
+                for entry in calc_list:
+                    entry = dict(entry)
+                    entry["work_operations_index_encoded"] = torch.tensor(self._index_encode(entry["work_operations"]))
+                    entry["room_cluster_one_hot"] = torch.tensor(
+                        index_encode_str(entry["room_cluster"], len(self.__rooms), self.room_to_index)
+                    )
+                    new_calc_list.append(entry)
+                calculus_index.append(new_calc_list)
 
             calculus_df = pl.DataFrame({"calculus": calculus_index}, strict=False)
             base_df = base_df.with_columns(calculus_df)
