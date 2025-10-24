@@ -28,8 +28,10 @@ def get_room_scores(room_preds: list[int], room_targets: list[int]) -> dict[str,
         score -= FALSE_POSITIVE_PENALTY * len(room_preds_set - room_targets_set)
         score -= FALSE_NEGATIVE_PENALTY * len(room_targets_set - room_preds_set)
 
-    # Add a small coefficient to prevent division by zero
-    normalized_score = (score - dummy_score) / (best_possible_score - dummy_score + 1e-20)
+    if best_possible_score == dummy_score:
+        normalized_score = -abs(score)
+    else:
+        normalized_score = (score - dummy_score) / (best_possible_score - dummy_score)
 
     return {
         "score": score,
@@ -50,5 +52,7 @@ def normalized_rooms_score(preds: list[list[int]], targets: list[list[int]]) -> 
         dummy_score += room_scores["dummy_score"]
         best_possible_score += room_scores["best_possible_score"]
 
-    # Add a small coefficient to prevent division by zero
-    return (score - dummy_score) / (best_possible_score - dummy_score + 1e-20)
+    if best_possible_score == dummy_score:
+        return -abs(score)
+
+    return (score - dummy_score) / (best_possible_score - dummy_score)
