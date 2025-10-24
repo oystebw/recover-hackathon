@@ -4,6 +4,7 @@ import sys
 
 import numpy as np
 import pandas as pd
+from typing import Iterable
 from torch.utils.data import Dataset
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -83,6 +84,9 @@ class HackathonDataset(Dataset):
 
     def multi_hot_encode_batch(self, labels: list[list[int]]) -> np.ndarray:
         return self.work_operations_dataset._index_encode_batch(labels)
+
+    def to_cluster_names(self, it: Iterable) -> list[str]:
+        return self.work_operations_dataset.to_cluster_names(it)
 
     def create_submission(self, predictions):
         """Create a submission file.

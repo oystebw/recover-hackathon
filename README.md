@@ -18,6 +18,7 @@ Recover usually acts as the total provider for all post-damage work. This means 
 - **Python 3.12**: Required for the project. [Download Python](https://www.python.org/downloads/)
 - **UV**: Used for managing Python environments. [Install UV](https://docs.astral.sh/uv/getting-started/installation/)
 
+
 ## Setup
 
 1. Clone this repository
@@ -33,16 +34,17 @@ Recover usually acts as the total provider for all post-damage work. This means 
     
     Either use Kaggle API or download the data manually:
     - **Using Kaggle API**: [Kaggle API Documentation](https://www.kaggle.com/discussions/getting-started/524433) 
-  1. Go to the 'Account' tab on your Kaggle profile and open 'Account' settings.
-      2. Click 'Create New Token'. This will download a file named kaggle.json containing your API credentials.
-      3. Move this file to the appropriate location:
-         * Linux/OSX: ~/.kaggle/kaggle.json
-           * chmod 600 ~/.kaggle/kaggle.json
-         * Windows: C:\Users\<Windows-username>\.kaggle\kaggle.json
-         Make sure the permissions are set correctly to keep the file secure.
-      4. ```bash
-            uv run python dataset/hackathon.py
-            ```
+     1. Go to the 'Account' tab on your Kaggle profile and open 'Account settings'.
+     2. Click 'Create New Token'. This will download a file named kaggle.json containing your API credentials.
+     3. Move this file to the appropriate location:
+         * Linux/OSX: `~/.kaggle/kaggle.json`
+           * `chmod 600 ~/.kaggle/kaggle.json`
+         * Windows: `C:\Users\<Windows-username>\.kaggle\kaggle.json`
+
+        Make sure the permissions are set correctly to keep the file secure.
+     1. ```bash
+        uv run python dataset/hackathon.py
+        ```
     - **Download the dataset manually**:
       1. Go to the [Data](https://www.kaggle.com/competitions/hackathon-recover-x-cogito/data) page.
       2. Download the dataset files.
@@ -199,12 +201,13 @@ Vi anbefaler [polars](https://www.pola.rs/) på det varmeste, med det er selvfø
 ## Eksempelbruk
 
 ```python
-from dataset import HackathonDataset, collate_fn
+from dataset.hackathon import HackathonDataset
+from dataset.collate import collate_fn
 from metrics.score import normalized_rooms_score
 from torch.utils.data import DataLoader
 
 # Last inn treningssett
-dataset = HackathonDataset(split="train", download=True, seed=42, root="data").get_pandas_dataframe()
+dataset = HackathonDataset(split="train", download=True, seed=42, root="data")
 
 # Se på en rad
 sample = dataset[0]
