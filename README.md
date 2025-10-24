@@ -201,12 +201,13 @@ Vi anbefaler [polars](https://www.pola.rs/) på det varmeste, med det er selvfø
 ## Eksempelbruk
 
 ```python
-from dataset import HackathonDataset, collate_fn
+from dataset.hackathon import HackathonDataset
+from dataset.collate import collate_fn
 from metrics.score import normalized_rooms_score
 from torch.utils.data import DataLoader
 
 # Last inn treningssett
-dataset = HackathonDataset(split="train", download=True, seed=42, root="data").get_pandas_dataframe()
+dataset = HackathonDataset(split="train", download=True, seed=42, root="data")
 
 # Se på en rad
 sample = dataset[0]
