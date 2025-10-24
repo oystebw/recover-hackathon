@@ -80,12 +80,23 @@ class WorkOperationsDataset(BaseDataset):
                 "use_sampled_calculus": True,
             },
         ]
-        assert sum(s["subset_size"] for s in self.sampling_strategy) == 1.0
+        assert abs(sum(cfg["subset_size"] for cfg in self.sampling_strategy) - 1.0) < 1e-6, (
+            "Subset sizes must sum to 1."
+        )
+        if split == "test":
+            self.sampling_strategy = [
+                {
+                    "subset_size": 1.0,
+                    "sample_pct": 0.0,
+                    "use_balanced_data": False,
+                    "use_sampled_calculus": False,
+                }
+            ]
 
         self.shuffle()
 
     def set_sampling_strategy(self, strategy: list[dict]):
-        assert sum(s["subset_size"] for s in strategy) == 1.0
+        assert abs(sum(cfg["subset_size"] for cfg in strategy) - 1.0) < 1e-6, "Subset sizes must sum to 1."
         self.sampling_strategy = strategy
 
     def shuffle(self):
@@ -99,6 +110,7 @@ class WorkOperationsDataset(BaseDataset):
     def __getitem__(self, idx):
         row = self.data.row(idx)
         return {
+            "id": row[self.col_idx["id"]],
             "X": torch.tensor(self._index_encode(row[self.col_idx["X"]])),
             "Y": torch.tensor(self._index_encode(row[self.col_idx["Y"]])),
             "project_id": row[self.col_idx["project_id"]],
@@ -137,14 +149,14 @@ class WorkOperationsDataset(BaseDataset):
     def _index_encode(self, label_list: list[int]) -> list[int]:
         vec = np.zeros(self.num_clusters, dtype=np.int8)
         for i in label_list:
-            vec[i - 1] = 1
+            vec[i] = 1
         return vec.tolist()
 
     def _index_encode_batch(self, labels: list[list[int]]) -> np.ndarray:
         batch_vec = np.zeros((len(labels), self.num_clusters), dtype=np.int8)
         for i, label_list in enumerate(labels):
             for j in label_list:
-                batch_vec[i, j - 1] = 1
+                batch_vec[i, j] = 1
         return batch_vec
 
     def _load_data(self):
@@ -155,6 +167,7 @@ class WorkOperationsDataset(BaseDataset):
             )
             .group_by(["project_id", "room", "room_cluster"])
             .agg(
+                pl.col("id").first(),
                 pl.col("work_operation_cluster_name").alias("wo_names"),
                 pl.col("work_operation_cluster_code").alias("wo_codes"),
             )
