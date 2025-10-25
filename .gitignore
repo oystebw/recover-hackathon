@@ -208,3 +208,8 @@ __marimo__/
 
 data/*.csv
 submissions/*.csv
+
+precomputed/
+*.pt
+*.npz
+*.npy
