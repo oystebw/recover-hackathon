@@ -37,6 +37,7 @@ class WorkOperationsDataset(BaseDataset):
         "wc",
         "kjeller",
         "garasje",
+        "ukjent",
     ]
 
     def __init__(

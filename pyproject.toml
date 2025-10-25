@@ -4,7 +4,7 @@ version = "0.1.0"
 readme = "README.md"
 requires-python = ">=3.10,<3.14"
 dependencies = [
-    "numpy>=1.25,<2.1.4",
+    "numpy>=2.1,<3",
     "pandas>=2.2.3,<3.0.0",
     "torch>=2.6.0,<3.0.0",
     "matplotlib>=3.10.0,<4.0.0",
@@ -17,9 +17,11 @@ dependencies = [
     "pyodbc>=5.2.0,<6.0.0",
     "polars>=1.33.0,<2.0.0",
     "torchvision<0.23",
-    "scikit-learn<1.4.1",
+    "scikit-learn>=1.5",
     "kaggle>=1.7.4.5",
     "pyarrow>=21.0.0",
+    "lightgbm",
+    "xgboost>=2.0.3",
 ]
 
 [tool.uv]
